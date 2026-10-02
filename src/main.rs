@@ -6,6 +6,7 @@ Program Details: <Program Description Here>
 
 mod ui;
 mod utils;
+mod custom;
 
 use macroquad::prelude::*;
 
@@ -17,6 +18,7 @@ use crate::utils::preload_image::LoadingScreenOptions; // If you want to customi
 use crate::ui::label::Label;
 use macroquad::input::KeyCode;
 use crate::utils::collision::check_collision;
+use crate::custom::player::Player;
 
 /// Set up window settings before the app runs
 fn window_conf() -> Conf {
@@ -60,12 +62,22 @@ let mut verity = StillImage::from_preload(
     1.0,                   // Zoom level (100%)
 );
 
-let mut wall= StillImage::from_preload(
+let mut wall1= StillImage::from_preload(
     tm.get_preload("assets/wall.png").unwrap(),
     screen_width() * 0.2,  // Width
     screen_height() * 0.1, // Height
     -200.0,                   // X position
     525.0,                   // Y position
+    true,                  // Enable stretching
+    1.0,                   // Zoom level (100%)
+);
+
+let mut wall2= StillImage::from_preload(
+    tm.get_preload("assets/wall.png").unwrap(),
+    screen_width() * 0.07,  // Width
+    screen_height() * 0.23, // Height
+    500.0,                   // X position
+    -200.0,                   // Y position
     true,                  // Enable stretching
     1.0,                   // Zoom level (100%)
 );
@@ -87,7 +99,8 @@ let mut lbl_help = Label::new("Use WASD to move, reach the green\nsquare and avo
 lbl_help.with_colors(BLACK, Some(WHITE));
 
 
-let collision = check_collision(&verity, &maze, 1); // 1 = pixel skip (for performance)
+/* let collision = check_collision(&verity, &maze, 1); // 1 = pixel skip (for performance)
+*/
 
     loop {
         clear_background(WHITE);
@@ -95,22 +108,32 @@ let collision = check_collision(&verity, &maze, 1); // 1 = pixel skip (for perfo
         win.draw();
         maze.draw();
         verity.draw();
-        wall.draw();
+        wall1.draw();
+        wall2.draw();
         lbl_win.draw();
         lbl_help.draw();
 
-        if wall.get_x() >= -200.0 && wall.get_x() <= 1050.0{
-            wall.set_x(wall.get_x() + 2.0);
+        if wall1.get_x() >= -200.0 && wall1.get_x() <= 1050.0{
+            wall1.set_x(wall1.get_x() + 2.0);
         }
+
+        if wall1.get_x() == 1050.0 {
+            wall1.set_x(-200.0);
+        }
+
+        if wall2.get_y() >= -200.0 && wall2.get_y() <= 900.0{
+            wall2.set_y(wall2.get_y() + 1.0);
+        }
+
+        if wall2.get_y() == 900.0{
+            wall2.set_y(-200.0);
+        }
+
 
         
 
-        if wall.get_x() == 1050.0 {
-            wall.set_x(-200.0);
-        }
 
-
-
+/*
         // Assume `player` is your module
 let mut x = verity.get_x();
 let mut y = verity.get_y();
@@ -176,9 +199,16 @@ if collisionmaze{
     verity.set_x(x - 2.0);
 }
 
-let collisionwall = check_collision(&verity, &wall, 1);
+let collisionwall1 = check_collision(&verity, &wall1, 1);
 
-if collisionwall{
+if collisionwall1{
+    verity.set_x(35.0);
+    verity.set_y(15.0);
+}
+
+let collisionwall2 = check_collision(&verity, &wall2, 1);
+
+if collisionwall2{
     verity.set_x(35.0);
     verity.set_y(15.0);
 }
@@ -191,6 +221,7 @@ if collisionwin{
     lbl_win.set_visible(true);
     
 }
+    */
 
         next_frame().await;
 }
