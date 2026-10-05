@@ -10,7 +10,7 @@ mod custom;
 
 use macroquad::prelude::*;
 
-use crate::ui::grid::draw_grid;
+use crate::custom::player;
 use crate::ui::image_button::ImageButton;
 use crate::ui::still_image::StillImage;
 use crate::utils::preload_image::TextureManager;
@@ -37,6 +37,9 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
 
+    let mut start_x = 35.0;
+    let mut start_y = 15.0;
+
 let tm = TextureManager::new();
 
 
@@ -52,15 +55,17 @@ let tm = TextureManager::new();
     1.0,             // Zoom level (100%)
 );
 
-let mut verity = StillImage::from_preload(
-    tm.get_preload("assets/Verity.png").unwrap(),
-    screen_width() * 0.07,  // Width
-    screen_height() * 0.08, // Height
+let mut player = Player::new(
     35.0,                   // X position
     15.0,                   // Y position
-    true,                  // Enable stretching
-    1.0,                   // Zoom level (100%)
-);
+    screen_width() * 0.07,  // Width
+    screen_height() * 0.08, // Height
+    "assets/Verity.png",    // Image name
+    true,                   // Enable stretching
+    1.0,                    // Zoom level (100%)
+    3.0,                    // Speed
+    vec2(35.0, 15.0),       // Old position
+).await;
 
 let mut wall1= StillImage::from_preload(
     tm.get_preload("assets/wall.png").unwrap(),
@@ -94,7 +99,10 @@ let mut win = StillImage::from_preload(
 
 let mut lbl_win = Label::new("You win!", 350.0, 350.0, 90);
 lbl_win.with_colors(BLACK, Some(WHITE));
+let mut lbl_restart = Label::new("Press SPACE to restart", 250.0, 400.0, 50);
+lbl_restart.with_colors(BLACK, Some(WHITE));
 lbl_win.set_visible(false);
+lbl_restart.set_visible(false);
 let mut lbl_help = Label::new("Use WASD to move, reach the green\nsquare and avoid the red squares to win", 100.0, 300.0, 50);
 lbl_help.with_colors(BLACK, Some(WHITE));
 
@@ -104,13 +112,13 @@ lbl_help.with_colors(BLACK, Some(WHITE));
 
     loop {
         clear_background(WHITE);
-        draw_grid(50.0, BLACK);
         win.draw();
         maze.draw();
-        verity.draw();
+        player.get_image().draw();
         wall1.draw();
         wall2.draw();
         lbl_win.draw();
+        lbl_restart.draw();
         lbl_help.draw();
 
         if wall1.get_x() >= -200.0 && wall1.get_x() <= 1050.0{
@@ -130,98 +138,67 @@ lbl_help.with_colors(BLACK, Some(WHITE));
         }
 
 
-        
+        player.keypress();
+        player.move_player();
 
-
-/*
-        // Assume `player` is your module
-let mut x = verity.get_x();
-let mut y = verity.get_y();
-
-const MOVE_SPEED: f32 = 200.0;
-
- // Direction to move in
-        let mut move_dir = vec2(0.0, 0.0);
-
-        // Keyboard input
-        if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
-            move_dir.x += 6.0;
+        if player.move_dir.x != 0.0 {
             lbl_help.set_visible(false);
-        
-        }
-        if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
-            move_dir.x -= 6.0;
-            lbl_help.set_visible(false);
-        
-        }
-        if is_key_down(KeyCode::S) || is_key_down(KeyCode::Down) {
-            move_dir.y += 6.0;
-            lbl_help.set_visible(false);
-        }
-        if is_key_down(KeyCode::W) || is_key_down(KeyCode::Up) {
-            move_dir.y -= 6.0;
-            lbl_help.set_visible(false);
-        }
-
-        // Normalize the movement to prevent faster diagonal movement
-        if move_dir.length() > 0.0 {
-            move_dir = move_dir.normalize();
-        }
-
-        // Apply movement based on frame time
-        let movement = move_dir * MOVE_SPEED * get_frame_time();
-
-        // Save old position in case of collision
-        let old_pos = verity.pos();
-
-        // Move X first
-        if movement.x != 0.0 {
-            verity.set_x(verity.get_x() + movement.x);
-            if check_collision(&verity, &maze, 1) {
-                verity.set_x(old_pos.x); // Undo if collision happens
+            if check_collision(player.get_image(), &maze, 1) {
+                player.move_back_x();
             }
-            
         }
 
-        // Move Y next
-        if movement.y != 0.0 {
-            verity.set_y(verity.get_y() + movement.y);
-            if check_collision(&verity, &maze, 1) {
-                verity.set_y(old_pos.y); // Undo if collision happens
+        if player.move_dir.y != 0.0 {
+            lbl_help.set_visible(false);
+            if check_collision(player.get_image(), &maze, 1) {
+                player.move_back_y();
             }
-            
         }
-// Update the module's position
 
-let collisionmaze = check_collision(&verity, &maze, 1);
+        if player.move_dir.x != 0.0 {
+            lbl_help.set_visible(false);
+            if check_collision(player.get_image(), &wall1, 1) {
+                player.move_to_start();
+            }
+        }
 
-if collisionmaze{
-    verity.set_x(x - 2.0);
-}
+        if player.move_dir.y != 0.0 {
+            if check_collision(player.get_image(), &wall1, 1) {
+                player.move_to_start();
+            }
+        }
 
-let collisionwall1 = check_collision(&verity, &wall1, 1);
+        if player.move_dir.x != 0.0 {
+            if check_collision(player.get_image(), &wall2, 1) {
+                player.move_to_start();
+            }
+        }
 
-if collisionwall1{
-    verity.set_x(35.0);
-    verity.set_y(15.0);
-}
+        if player.move_dir.y != 0.0 {
+            if check_collision(player.get_image(), &wall2, 1) {
+                player.move_to_start();
+            }
+        }
+        if player.move_dir.x != 0.0 {
+            if check_collision(player.get_image(), &win, 1) {
+                player.move_to_win();
+                lbl_win.set_visible(true);
+            }
+        }
 
-let collisionwall2 = check_collision(&verity, &wall2, 1);
+        if player.move_dir.y != 0.0 {
+            if check_collision(player.get_image(), &win, 1) {
+                player.move_to_win();
+                lbl_win.set_visible(true);
+                lbl_restart.set_visible(true);
+            }
+        }
 
-if collisionwall2{
-    verity.set_x(35.0);
-    verity.set_y(15.0);
-}
-
-let collisionwin = check_collision(&verity, &win, 1);
-
-if collisionwin{
-    verity.set_x(925.0);
-    verity.set_y(675.0);
-    lbl_win.set_visible(true);
-    
-}
-    */
+        if lbl_restart.is_visible() && is_key_down(KeyCode::Space) {
+            player.move_to_start();
+            lbl_win.set_visible(false);
+            lbl_restart.set_visible(false);
+        }
 
         next_frame().await;
 }

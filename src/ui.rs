@@ -11,7 +11,6 @@ pub mod grid;
 --------------------------------------------
 */
 // Add modules below
-pub mod grid;
 pub mod still_image;
 pub mod image_button;
 pub mod label;
