@@ -43,7 +43,7 @@ async fn main() {
 let tm = TextureManager::new();
 
 
-    tm.preload_with_loading_screen(&["assets/Verity.png","assets/maze.png","assets/wall.png","assets/win.png"], None, None).await;
+    tm.preload_with_loading_screen(&["assets/Verity.png","assets/maze.png","assets/wall.png","assets/win.png", "assets/key.png", "assets/cellar.png"], None, None).await;
 
     let maze = StillImage::from_preload(
     tm.get_preload("assets/maze.png").unwrap(),
@@ -88,11 +88,21 @@ let mut wall2= StillImage::from_preload(
 );
 
 let mut win = StillImage::from_preload(
-    tm.get_preload("assets/win.png").unwrap(),
+    tm.get_preload("assets/cellar.png").unwrap(),
     screen_width() * 0.12,  // Width
     screen_height() * 0.15, // Height
     900.0,                   // X position
     650.0,                   // Y position
+    true,                  // Enable stretching
+    1.0,                   // Zoom level (100%)
+);
+
+let mut key = StillImage::from_preload(
+    tm.get_preload("assets/key.png").unwrap(),
+    screen_width() * 0.10,  // Width
+    screen_height() * 0.13, // Height
+    450.0,                   // X position
+    500.0,                   // Y position
     true,                  // Enable stretching
     1.0,                   // Zoom level (100%)
 );
@@ -103,8 +113,10 @@ let mut lbl_restart = Label::new("Press SPACE to restart", 250.0, 400.0, 50);
 lbl_restart.with_colors(BLACK, Some(WHITE));
 lbl_win.set_visible(false);
 lbl_restart.set_visible(false);
-let mut lbl_help = Label::new("Use WASD to move, reach the green\nsquare and avoid the red squares to win", 100.0, 300.0, 50);
+let mut lbl_help = Label::new("Use WASD to move. Get the key and reach the\ncellar while avoiding the red squares to win", 100.0, 300.0, 40);
 lbl_help.with_colors(BLACK, Some(WHITE));
+
+let mut keyheld = false;
 
 
 /* let collision = check_collision(&verity, &maze, 1); // 1 = pixel skip (for performance)
@@ -115,6 +127,7 @@ lbl_help.with_colors(BLACK, Some(WHITE));
         win.draw();
         maze.draw();
         player.get_image().draw();
+        key.draw();
         wall1.draw();
         wall2.draw();
         lbl_win.draw();
@@ -159,35 +172,58 @@ lbl_help.with_colors(BLACK, Some(WHITE));
             lbl_help.set_visible(false);
             if check_collision(player.get_image(), &wall1, 1) {
                 player.move_to_start();
+                keyheld = false;
+                key.set_x(450.0);
             }
         }
 
         if player.move_dir.y != 0.0 {
             if check_collision(player.get_image(), &wall1, 1) {
                 player.move_to_start();
+                keyheld = false;
+                key.set_x(450.0);
             }
         }
 
         if player.move_dir.x != 0.0 {
             if check_collision(player.get_image(), &wall2, 1) {
                 player.move_to_start();
+                keyheld = false;
+                key.set_x(450.0);
             }
         }
 
         if player.move_dir.y != 0.0 {
             if check_collision(player.get_image(), &wall2, 1) {
                 player.move_to_start();
+                keyheld = false;
+                key.set_x(450.0);
             }
         }
+
         if player.move_dir.x != 0.0 {
-            if check_collision(player.get_image(), &win, 1) {
+            if check_collision(player.get_image(), &key, 1) {
+                keyheld = true;
+                key.set_x(-200.0);
+            }
+        }
+
+        if player.move_dir.y != 0.0 {
+            if check_collision(player.get_image(), &key, 1) {
+                keyheld = true;
+                key.set_x(-200.0);
+            }
+        }
+
+        if player.move_dir.x != 0.0 {
+            if check_collision(player.get_image(), &win, 1) && keyheld == true {
                 player.move_to_win();
                 lbl_win.set_visible(true);
             }
         }
 
         if player.move_dir.y != 0.0 {
-            if check_collision(player.get_image(), &win, 1) {
+            if check_collision(player.get_image(), &win, 1) && keyheld == true {
                 player.move_to_win();
                 lbl_win.set_visible(true);
                 lbl_restart.set_visible(true);
@@ -198,6 +234,8 @@ lbl_help.with_colors(BLACK, Some(WHITE));
             player.move_to_start();
             lbl_win.set_visible(false);
             lbl_restart.set_visible(false);
+            keyheld = false;
+            key.set_x(450.0);
         }
 
         next_frame().await;
