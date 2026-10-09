@@ -15,15 +15,9 @@ mod menu;
 
 use macroquad::prelude::*;
 
-use crate::custom::player;
-use crate::ui::image_button::ImageButton;
-use crate::ui::still_image::StillImage;
+
 use crate::utils::preload_image::TextureManager;
-use crate::utils::preload_image::LoadingScreenOptions; // If you want to customize the loading screen
-use crate::ui::label::Label;
-use macroquad::input::KeyCode;
-use crate::utils::collision::check_collision;
-use crate::custom::player::Player;
+
 
 /// Set up window settings before the app runs
 fn window_conf() -> Conf {
@@ -41,17 +35,23 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut current_screen = "game".to_string();
+
+    let mut tm = TextureManager::new();
+
+
+    tm.preload_with_loading_screen(&["assets/Verity.png","assets/maze.png","assets/wall.png","assets/win.png", "assets/key.png", "assets/cellar.png"], None, None).await;
+
+    let mut current_screen = "menu".to_string();
     let mut score = 0;
     let mut last_switch = get_time() - 0.02;
 
     loop {
         if get_time() - last_switch > 0.01 {
-            (current_screen, score) = match current_screen.as_str() {
-                "screen1" => game::run(score).await,
-                "screen2" => win::run(score).await,
-                "screen3" => lose::run(score).await,
-                "screen4" => menu::run(score).await,
+            (current_screen, score, tm) = match current_screen.as_str() {
+                "menu" => menu::run(score, tm).await,
+                "win" => win::run(score, tm).await,
+                "lose" => lose::run(score, tm).await,
+                "game" => game::run(score, tm).await,
                 _ => break,
             };
             last_switch = get_time();

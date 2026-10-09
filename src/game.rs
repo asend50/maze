@@ -1,24 +1,13 @@
 use macroquad::prelude::*;
 
-use crate::custom::player;
-use crate::ui::image_button::ImageButton;
+
 use crate::ui::still_image::StillImage;
 use crate::utils::preload_image::TextureManager;
-use crate::utils::preload_image::LoadingScreenOptions; // If you want to customize the loading screen
-use crate::ui::label::Label;
-use macroquad::input::KeyCode;
 use crate::utils::collision::check_collision;
 use crate::custom::player::Player;
 
-pub async fn run(score: i32) -> (String, i32) {
+pub async fn run(score: i32, tm: TextureManager) -> (String, i32, TextureManager) {
     let mut current_score = score;
-    let mut start_x = 35.0;
-    let mut start_y = 15.0;
-
-let tm = TextureManager::new();
-
-
-    tm.preload_with_loading_screen(&["assets/Verity.png","assets/maze.png","assets/wall.png","assets/win.png", "assets/key.png", "assets/cellar.png"], None, None).await;
 
     let maze = StillImage::from_preload(
     tm.get_preload("assets/maze.png").unwrap(),
@@ -62,7 +51,7 @@ let mut wall2= StillImage::from_preload(
     1.0,                   // Zoom level (100%)
 );
 
-let mut win = StillImage::from_preload(
+let win = StillImage::from_preload(
     tm.get_preload("assets/cellar.png").unwrap(),
     screen_width() * 0.12,  // Width
     screen_height() * 0.15, // Height
@@ -129,37 +118,21 @@ let mut keyheld = false;
             }
         }
 
-        if player.move_dir.x != 0.0 {
-            if check_collision(player.get_image(), &wall1, 1) {
-                player.move_to_start();
-                keyheld = false;
-                key.set_x(450.0);
+        if check_collision(player.get_image(), &wall1, 1) {
+            return ("lose".to_string(), current_score, tm);
             }
-        }
 
-        if player.move_dir.y != 0.0 {
-            if check_collision(player.get_image(), &wall1, 1) {
-                player.move_to_start();
-                keyheld = false;
-                key.set_x(450.0);
+        if check_collision(player.get_image(), &wall1, 1) {
+        return ("lose".to_string(), current_score, tm);
             }
-        }
+        
+        if check_collision(player.get_image(), &wall2, 1) {
+            return ("lose".to_string(), current_score, tm);
+            }
 
-        if player.move_dir.x != 0.0 {
-            if check_collision(player.get_image(), &wall2, 1) {
-                player.move_to_start();
-                keyheld = false;
-                key.set_x(450.0);
+        if check_collision(player.get_image(), &wall2, 1) {
+            return ("lose".to_string(), current_score, tm);
             }
-        }
-
-        if player.move_dir.y != 0.0 {
-            if check_collision(player.get_image(), &wall2, 1) {
-                player.move_to_start();
-                keyheld = false;
-                key.set_x(450.0);
-            }
-        }
 
         if player.move_dir.x != 0.0 {
             if check_collision(player.get_image(), &key, 1) {
@@ -177,17 +150,16 @@ let mut keyheld = false;
 
         if player.move_dir.x != 0.0 {
             if check_collision(player.get_image(), &win, 1) && keyheld == true {
+                current_score += 1;
+            return ("win".to_string(), current_score, tm);
             }
         }
 
         if player.move_dir.y != 0.0 {
             if check_collision(player.get_image(), &win, 1) && keyheld == true {
+                current_score += 1;
+            return ("win".to_string(), current_score, tm);
             }
-        }
-
-        if is_key_pressed(KeyCode::Space) {
-            current_score += 1;
-            return ("win".to_string(), current_score);
         }
 
         

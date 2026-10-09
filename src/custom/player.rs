@@ -79,14 +79,5 @@ impl Player {
     pub fn get_speed(&self) -> f32 {
         self.speed
     }
-
-    pub fn move_to_start(&mut self) {
-        self.image.set_x(35.0);
-        self.image.set_y(15.0);
-    }
-
-    pub fn move_to_win(&mut self) {
-        self.image.set_x(930.0);
-        self.image.set_y(680.0);
-    }
+   
 }
